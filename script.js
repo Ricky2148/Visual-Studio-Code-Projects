@@ -1,59 +1,48 @@
-// Initialize Supabase client
-const SUPABASE_URL = "https://xsojagtjwixhootxafyr.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzb2phZ3Rqd2l4aG9vdHhhZnlyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDc2OTEsImV4cCI6MjA3NjM4MzY5MX0.Vg-cAPZ63r5dWPrz9dTA-QpGvIAfJu1YeriXJAH_FUo";
+// ====== Supabase init ======
+const SUPABASE_URL = "https://nshivifdkkovjpbfqlex.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zaGl2aWZka2tvdmpwYmZxbGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MDQ2MDQsImV4cCI6MjA3NjM4MDYwNH0.GoLV4wfw7XUUc1zWW46VYXQFwlW3Op-uaCykDN7NxrE";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// Switch dashboard sections
+// ====== Section switching ======
 function showSection(sectionId) {
-  const sections = document.querySelectorAll(".page-section");
-  sections.forEach(sec => sec.classList.add("hidden"));
+  document.querySelectorAll(".page-section").forEach(sec => sec.classList.add("hidden"));
   document.getElementById(sectionId).classList.remove("hidden");
 
   if (sectionId === "profile") loadProfile();
+  if (sectionId === "favorites") loadFavorites();
 }
 
-// --- SIGN UP ---
+// ====== Auth ======
 async function handleSignUp() {
   const email = document.getElementById("signupEmail").value;
   const password = document.getElementById("signupPassword").value;
-
-  const { data, error } = await supabase.auth.signUp({ email, password });
-
-  if (error) alert("Sign-up failed: " + error.message);
-  else {
-    alert("Account created successfully!");
-    window.location.href = "dashboard.html";
-  }
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) return alert("Sign-up failed: " + error.message);
+  alert("Account created successfully!");
+  window.location.href = "dashboard.html";
 }
 
-// --- LOGIN ---
 async function handleLogin() {
   const email = document.getElementById("loginEmail").value;
   const password = document.getElementById("loginPassword").value;
-
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-  if (error) alert("Login failed: " + error.message);
-  else window.location.href = "dashboard.html";
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) return alert("Login failed: " + error.message);
+  window.location.href = "dashboard.html";
 }
 
-// --- LOGOUT ---
 async function logout() {
   await supabase.auth.signOut();
   window.location.href = "index.html";
 }
 
-// --- LOAD CONCERTS FROM SUPABASE ---
+// ====== Concerts (unchanged structure) ======
 async function loadConcerts() {
   const { data, error } = await supabase
     .from("concerts")
     .select("*")
     .order("date", { ascending: true });
 
-  if (error) {
-    console.error("Error loading concerts:", error);
-    return;
-  }
+  if (error) { console.error("Error loading concerts:", error); return; }
 
   const concertList = document.getElementById("concertList");
   concertList.innerHTML = "";
@@ -64,7 +53,7 @@ async function loadConcerts() {
     div.innerHTML = `
       <h3>${concert.artist}</h3>
       <p>${concert.location} — ${concert.date}</p>
-      <button onclick="addToFavorites(${concert.id}, '${concert.artist}', '${concert.location} — ${concert.date}')">
+      <button onclick="addToFavorites(${concert.id}, '${concert.artist.replace(/'/g,"\\'")}')">
         ⭐ Add to Favorites
       </button>
     `;
@@ -72,46 +61,31 @@ async function loadConcerts() {
   });
 }
 
-// --- ADD TO FAVORITES (PREVENT DUPLICATES) ---
-async function addToFavorites(concertId, artist, details) {
+// Prevent duplicate favorites for a user
+async function addToFavorites(concertId, artist) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
+  if (!user) return alert("Please log in first.");
 
-  if (!user) {
-    alert("Please log in first.");
-    return;
-  }
-
-  // Check if already favorited
   const { data: existing, error: checkError } = await supabase
     .from("favorites")
-    .select("*")
+    .select("id")
     .eq("user_id", user.id)
     .eq("concert_id", concertId);
 
-  if (checkError) {
-    alert("Error checking favorites: " + checkError.message);
-    return;
-  }
+  if (checkError) return alert("Error checking favorites: " + checkError.message);
+  if (existing && existing.length > 0) return alert(`${artist} is already in your favorites.`);
 
-  if (existing.length > 0) {
-    alert(`${artist} is already in your favorites.`);
-    return;
-  }
-
-  // Insert new favorite
   const { error } = await supabase
     .from("favorites")
     .insert([{ user_id: user.id, concert_id: concertId }]);
 
-  if (error) alert("Error adding favorite: " + error.message);
-  else {
-    alert(`${artist} added to your favorites!`);
-    await loadFavorites();
-  }
+  if (error) return alert("Error adding favorite: " + error.message);
+  await loadFavorites();
+  alert(`${artist} added to your favorites!`);
 }
 
-// --- LOAD FAVORITES FROM SUPABASE ---
+// ====== Favorites (render original line + small button on right) ======
 async function loadFavorites() {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
@@ -119,13 +93,18 @@ async function loadFavorites() {
 
   const { data, error } = await supabase
     .from("favorites")
-    .select("concerts(artist, location, date)")
-    .eq("user_id", user.id);
+    .select("id, concerts(artist, location, date)")
+    .eq("user_id", user.id)
+    .order("id", { ascending: true });
 
   const favDiv = document.getElementById("favoritesList");
   favDiv.innerHTML = "";
 
-  if (error || !data.length) {
+  if (error) {
+    favDiv.innerHTML = `<p>Error loading favorites: ${error.message}</p>`;
+    return;
+  }
+  if (!data || data.length === 0) {
     favDiv.innerHTML = "<p>No favorites yet.</p>";
     return;
   }
@@ -134,16 +113,34 @@ async function loadFavorites() {
     const c = fav.concerts;
     const div = document.createElement("div");
     div.classList.add("concert-card");
-    div.innerHTML = `<strong>${c.artist}</strong> — ${c.location} (${c.date})`;
+    // Original single-line format:
+    div.innerHTML = `
+      <span><strong>${c.artist}</strong> — ${c.location} (${c.date})</span>
+      <button class="remove-btn" onclick="removeFavorite('${fav.id}')">× Remove</button>
+    `;
     favDiv.appendChild(div);
   });
 }
 
-// --- LOAD PROFILE DATA ---
-async function loadProfile() {
+async function removeFavorite(favoriteId) {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData?.user;
-  if (!user) return;
+  if (!user) return alert("Please log in first.");
+
+  const { error } = await supabase
+    .from("favorites")
+    .delete()
+    .eq("id", favoriteId)
+    .eq("user_id", user.id);
+
+  if (error) return alert("Error removing favorite: " + error.message);
+  await loadFavorites();
+}
+
+// ====== Profile ======
+async function loadProfile() {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData?.user; if (!user) return;
 
   const { data, error } = await supabase
     .from("users")
@@ -151,10 +148,7 @@ async function loadProfile() {
     .eq("id", user.id)
     .single();
 
-  if (error) {
-    console.error("Error loading profile:", error);
-    return;
-  }
+  if (error) { console.error("Error loading profile:", error); return; }
 
   document.getElementById("profileName").value = data?.full_name || "";
   document.getElementById("favoriteArtists").value = data?.favorite_artists || "";
@@ -162,11 +156,9 @@ async function loadProfile() {
   document.getElementById("profileCity").value = data?.city || "";
 }
 
-// --- UPDATE PROFILE DATA ---
 async function updateProfile() {
   const { data: userData } = await supabase.auth.getUser();
-  const user = userData?.user;
-  if (!user) return;
+  const user = userData?.user; if (!user) return;
 
   const updates = {
     id: user.id,
@@ -177,28 +169,17 @@ async function updateProfile() {
   };
 
   const { error } = await supabase.from("users").upsert(updates);
-
   const status = document.getElementById("profileStatus");
-  if (error) {
-    status.textContent = "Error saving profile.";
-    status.style.color = "red";
-  } else {
-    status.textContent = "Profile updated successfully!";
-    status.style.color = "green";
-  }
+  if (error) { status.textContent = "Error saving profile."; status.style.color = "red"; }
+  else { status.textContent = "Profile updated successfully!"; status.style.color = "green"; }
 }
 
-// --- AUTO LOAD ON DASHBOARD ---
+// ====== Auto-init on dashboard ======
 if (window.location.pathname.endsWith("dashboard.html")) {
   (async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-
-    if (!user) {
-      window.location.href = "index.html";
-      return;
-    }
-
+    if (!user) { window.location.href = "index.html"; return; }
     await loadConcerts();
     await loadFavorites();
   })();
