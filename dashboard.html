@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrackMyGig | Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- 🔹 Navbar -->
+  <header class="navbar">
+    <h1>TrackMyGig</h1>
+    <nav>
+      <a href="#" onclick="showSection('browse')">Browse Concerts</a>
+      <a href="#" onclick="showSection('favorites')">My Favorites</a>
+      <a href="#" onclick="showSection('profile')">Profile</a>
+      <a href="#" onclick="logout()">Logout</a>
+    </nav>
+  </header>
+
+  <!-- 🔹 Main Dashboard Container -->
+  <div class="dashboard-container">
+
+    <!-- 🎫 Browse Concerts Section -->
+    <section id="browse" class="page-section">
+      <h2>Browse Concerts</h2>
+      <div class="concert-list" id="concertList"></div>
+    </section>
+
+    <!-- ⭐ Favorites Section -->
+    <section id="favorites" class="page-section hidden">
+      <h2>My Favorites</h2>
+      <div id="favoritesList"></div>
+    </section>
+
+    <!-- 🧍 Profile Section -->
+    <section id="profile" class="page-section hidden">
+      <h2>My Profile</h2>
+      <form id="profileForm">
+        <input type="text" id="profileName" placeholder="Full Name" />
+        <input type="text" id="favoriteArtists" placeholder="Favorite Artists" />
+        <input type="text" id="favoriteGenre" placeholder="Favorite Music Genre" />
+        <input type="text" id="profileCity" placeholder="City" />
+        <button type="button" onclick="updateProfile()">Save Changes</button>
+      </form>
+      <p id="profileStatus"></p>
+    </section>
+
+  </div>
+
+  <!-- 🔹 Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="script.js"></script>
+</body>
+</html>
