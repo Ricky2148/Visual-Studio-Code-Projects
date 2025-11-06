@@ -146,6 +146,6 @@ if concerts_list:
         #print(f"   Venue:    {concert['venue']}")
         #print(f"   Location: {concert['location']}")
         #print(f"   Status:   {concert['status']}")
-        #print(f"   Link:     {concert['link']}\n")
+        #print(f"   Link:     {concert['link']}\n")sdf
 else:
     print(f"No concerts were collected for {artist_name}.")
