@@ -10,6 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 # --- Configuration ---
+#making an update
 # Change this to the artist you want to track
 artist_name = "Playboi Carti"
 # ---------------------
@@ -146,6 +147,6 @@ if concerts_list:
         #print(f"   Venue:    {concert['venue']}")
         #print(f"   Location: {concert['location']}")
         #print(f"   Status:   {concert['status']}")
-        #print(f"   Link:     {concert['link']}\n")sdf
+        #print(f"   Link:     {concert['link']}\n")
 else:
     print(f"No concerts were collected for {artist_name}.")
